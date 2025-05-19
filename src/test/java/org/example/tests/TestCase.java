@@ -1,4 +1,4 @@
-package org.example.Tests;
+package org.example.tests;
 
 import com.aventstack.extentreports.ExtentTest;
 import com.aventstack.extentreports.Status;
@@ -7,7 +7,6 @@ import org.example.model.User;
 import org.example.pages.DataTablesPage;
 import org.example.report.ExtentManager;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.chrome.ChromeDriver;
 import org.testng.Assert;
 import org.testng.annotations.*;
 

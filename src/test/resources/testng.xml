@@ -3,7 +3,7 @@
 <suite name="Selenium Level 2 Pre-test Suite">
     <test name="Sortable Data Tables Test">
         <classes>
-            <class name="org.example.Tests.TestCase"/>
+            <class name="org.example.tests.TestCase"/>
         </classes>
     </test>
 </suite> 
