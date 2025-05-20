@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite name="Data Table Test Suite">
+    <listeners>
+        <listener class-name="org.example.listeners.TestListener"/>
+    </listeners>
+    <test name=org.example.listeners.TestListener"Data Table Tests">
+        <classes>
+            <class name="org.example.tests.TestCase"/>
+        </classes>
+    </test>
+</suite> 

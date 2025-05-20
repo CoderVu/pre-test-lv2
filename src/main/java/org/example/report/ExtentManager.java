@@ -23,8 +23,6 @@ public class ExtentManager {
 
     static {
         try {
-            System.out.println("Initializing ExtentManager...");
-            
             // Create directories if they don't exist
             Path reportDir = Paths.get(REPORT_PATH);
             Path screenshotDir = Paths.get(SCREENSHOT_PATH);
@@ -42,7 +40,6 @@ public class ExtentManager {
             // Configure ExtentSparkReporter with timestamp
             String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
             currentReportPath = REPORT_PATH + "extent-report_" + timestamp + ".html";
-            System.out.println("Creating report file: " + currentReportPath);
             
             ExtentSparkReporter sparkReporter = new ExtentSparkReporter(currentReportPath);
             sparkReporter.config().setDocumentTitle("Test Execution Report");
@@ -55,27 +52,22 @@ public class ExtentManager {
             // Add system info
             extentReports.setSystemInfo("OS", System.getProperty("os.name"));
             extentReports.setSystemInfo("Java Version", System.getProperty("java.version"));
-            
-            System.out.println("ExtentManager initialized successfully");
+
         } catch (IOException e) {
-            System.err.println("Error initializing ExtentManager: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
     public static ExtentTest createTest(String name, String description) {
-        System.out.println("Creating test: " + name);
         return extentReports.createTest(name, description);
     }
 
     public static void flush() {
-        System.out.println("Flushing report...");
         extentReports.flush();
     }
 
     public static String captureScreenshot(WebDriver driver, String screenshotName) {
         try {
-            System.out.println("Capturing screenshot: " + screenshotName);
             TakesScreenshot ts = (TakesScreenshot) driver;
             File source = ts.getScreenshotAs(OutputType.FILE);
             
@@ -86,17 +78,13 @@ public class ExtentManager {
             // Save screenshot in the same directory as the report
             Path reportDir = Paths.get(currentReportPath).getParent();
             Path targetPath = reportDir.resolve(fileName);
-            
-            System.out.println("Saving screenshot to: " + targetPath);
             // Copy screenshot to target location
             Files.copy(source.toPath(), targetPath);
             
             // Return relative path for report
             String relativePath = fileName;
-            System.out.println("Screenshot saved successfully at: " + relativePath);
             return relativePath;
         } catch (IOException e) {
-            System.err.println("Error capturing screenshot: " + e.getMessage());
             e.printStackTrace();
             return null;
         }

@@ -7,74 +7,84 @@ import org.example.report.ExtentManager;
 import org.testng.ITestContext;
 import org.testng.ITestListener;
 import org.testng.ITestResult;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 public class TestListener implements ITestListener {
+    private static final Logger LOGGER = Logger.getLogger(TestListener.class.getName());
     private ExtentTest test;
 
     @Override
     public void onTestStart(ITestResult result) {
-        System.out.println("Test started: " + result.getName());
+        LOGGER.info("Starting test: " + result.getName());
         test = ExtentManager.createTest(
             result.getMethod().getDescription(),
             "Test execution started"
         );
+        test.log(Status.INFO, "Test started: " + result.getName());
     }
 
     @Override
     public void onTestSuccess(ITestResult result) {
-        System.out.println("Test passed: " + result.getName());
-        test.log(Status.PASS, "Test passed successfully");
+        LOGGER.info("Test passed: " + result.getName());
+        test.log(Status.PASS, "Test completed successfully");
         ExtentManager.flush();
     }
 
     @Override
     public void onTestFailure(ITestResult result) {
-        System.out.println("Test failed: " + result.getName());
+        LOGGER.severe("Test failed: " + result.getName());
         Throwable throwable = result.getThrowable();
-        String errorMessage = throwable.getMessage();
+        String errorMessage = throwable != null ? throwable.getMessage() : "Unknown error";
         
-        test.log(Status.FAIL, "Test failed: " + errorMessage);
+        test.log(Status.FAIL, "Test failed with error: " + errorMessage);
         
-        // Log stack trace
-        if (throwable.getStackTrace().length > 0) {
-            test.log(Status.INFO, "Stack trace: " + throwable.getStackTrace()[0]);
-        }
-        
-        // Capture screenshot
-        try {
-            System.out.println("Attempting to capture screenshot...");
-            String screenshotPath = ExtentManager.captureScreenshot(
-                WebDriverConfig.getDriver(), 
-                "test_failure_" + result.getName()
-            );
-            if (screenshotPath != null) {
-                System.out.println("Screenshot captured at: " + screenshotPath);
-                test.addScreenCaptureFromPath(screenshotPath);
-            } else {
-                System.out.println("Failed to capture screenshot - path is null");
+        // Log detailed stack trace
+        if (throwable != null && throwable.getStackTrace().length > 0) {
+            StringBuilder stackTrace = new StringBuilder();
+            for (StackTraceElement element : throwable.getStackTrace()) {
+                stackTrace.append(element.toString()).append("\n");
             }
-        } catch (Exception e) {
-            System.out.println("Error capturing screenshot: " + e.getMessage());
-            e.printStackTrace();
-            test.log(Status.WARNING, "Failed to capture screenshot: " + e.getMessage());
+            test.log(Status.INFO, "Stack trace:\n" + stackTrace.toString());
         }
         
-        // Flush report after failure
-        System.out.println("Flushing report...");
+        // Capture and attach screenshot
+        captureAndAttachScreenshot(result.getName());
+        
         ExtentManager.flush();
     }
 
     @Override
     public void onTestSkipped(ITestResult result) {
-        System.out.println("Test skipped: " + result.getName());
-        test.log(Status.SKIP, "Test was skipped");
+        LOGGER.warning("Test skipped: " + result.getName());
+        test.log(Status.SKIP, "Test was skipped: " + result.getSkipCausedBy());
         ExtentManager.flush();
     }
 
     @Override
     public void onFinish(ITestContext context) {
-        System.out.println("Test suite finished");
-        // Final flush to ensure all reports are written
+        LOGGER.info("Test suite execution completed");
         ExtentManager.flush();
+    }
+
+    private void captureAndAttachScreenshot(String testName) {
+        try {
+            LOGGER.info("Capturing screenshot for failed test: " + testName);
+            String screenshotPath = ExtentManager.captureScreenshot(
+                WebDriverConfig.getDriver(), 
+                "failure_" + testName
+            );
+            
+            if (screenshotPath != null) {
+                LOGGER.info("Screenshot captured successfully: " + screenshotPath);
+                test.addScreenCaptureFromPath(screenshotPath);
+            } else {
+                LOGGER.warning("Screenshot capture failed - path is null");
+                test.log(Status.WARNING, "Failed to capture screenshot - path is null");
+            }
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error capturing screenshot", e);
+            test.log(Status.WARNING, "Failed to capture screenshot: " + e.getMessage());
+        }
     }
 } 

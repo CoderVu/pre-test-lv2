@@ -1,43 +1,42 @@
 package org.example.tests;
 
-import com.aventstack.extentreports.ExtentTest;
-import com.aventstack.extentreports.Status;
 import org.example.config.WebDriverConfig;
+import org.example.constants.TestConstants;
 import org.example.model.User;
 import org.example.pages.DataTablesPage;
-import org.example.report.ExtentManager;
+import org.example.testdata.TestData;
 import org.openqa.selenium.WebDriver;
 import org.testng.Assert;
 import org.testng.annotations.*;
 
 public class TestCase {
     private DataTablesPage dataTablesPage;
-    private ExtentTest test;
     private User expectedUser;
     private WebDriver driver;
+    private TestData testData;
 
     @BeforeClass
     public void setup() {
         driver = WebDriverConfig.getDriver();
         dataTablesPage = new DataTablesPage(driver);
-        expectedUser = new User("Smith", "John", "jsmith@gmail.com", "$50.00", "http://www.jsmith.com");
+        expectedUser = TestData.EXPECTED_USER;
     }
 
-    @Test(description = "Test Sortable Data Tables functionality")
-    public void testSortableDataTables() {
-        test = ExtentManager.createTest("Sortable Data Tables Test", 
-            "Verify data table sorting functionality");
-
-        test.log(Status.INFO, "Step 1: Navigate to https://the-internet.herokuapp.com/");
+    @Test(
+        description = "TC01: Verify data table functionality - First row data validation and column sorting"
+    )
+    public void verifyDataTableFirstRowAndColumnSorting() {
+        // Step 1: Navigate to main page
         dataTablesPage.navigateToMainPage();
-        test.log(Status.PASS, "Successfully navigated to the URL");
+        Assert.assertTrue(dataTablesPage.isElementDisplayed(dataTablesPage.getSortableDataTablesLink()), 
+            "Failed to navigate to main page");
 
-        test.log(Status.INFO, "Step 2: Click on the 'Sortable Data Tables' link");
+        // Step 2: Navigate to Sortable Data Tables
         dataTablesPage.navigateToSortableDataTables();
-        test.log(Status.PASS, "Successfully navigated to Sortable Data Tables page");
+        Assert.assertTrue(dataTablesPage.isElementDisplayed(dataTablesPage.getFirstTable()), 
+            "Failed to navigate to sortable data tables page");
 
-        test.log(Status.INFO, "Step 3: Verify first row data matches expected values");
-        test.log(Status.INFO, "Expected data: " + expectedUser);
+        // Step 3: Verify first row data
         boolean isFirstRowCorrect = dataTablesPage.verifyFirstRowData(
             expectedUser.getLastName(),
             expectedUser.getFirstName(),
@@ -45,13 +44,17 @@ public class TestCase {
             expectedUser.getDue(),
             expectedUser.getWebsite()
         );
-        Assert.assertTrue(isFirstRowCorrect, "First row data is incorrect. Expected: " + expectedUser + 
-            ", Actual: " + dataTablesPage.getColumnData(0));
-        test.log(Status.PASS, "First row data verification passed");
+        Assert.assertTrue(isFirstRowCorrect, 
+            String.format("First row data is incorrect.\nExpected: %s\nActual: %s", 
+                expectedUser, dataTablesPage.getColumnData(0)));
 
-        test.log(Status.INFO, "Step 4: Test sorting functionality for all columns");
-        dataTablesPage.testAllColumnsSorting();
-        test.log(Status.PASS, "All sorting tests completed successfully");
+        // Step 4: Test sorting functionality
+        dataTablesPage.verifyColumnsAscending(
+            "Last Name", "First Name", "Email", "Due", "Web Site"
+        );
+        dataTablesPage.verifyColumnsDescending(
+            "Last Name", "First Name", "Email", "Due", "Web Site"
+        );
     }
 
     @AfterClass

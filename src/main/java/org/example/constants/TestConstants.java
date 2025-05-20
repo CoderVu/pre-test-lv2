@@ -10,7 +10,7 @@ public class TestConstants {
     public static final int SCRIPT_TIMEOUT = 30;
 
     // Column Names
-    public static final String[] COLUMN_NAMES = {"LastName", "FirstName", "Email", "Due", "Website", "Action"};
+    public static final String[] COLUMN_NAMES = {"Last Name", "First Name", "Email", "Due", "Web Site", "Action"};
 
     // Screenshot Paths
     public static final String SCREENSHOT_PATH = "test-output/screenshots/";

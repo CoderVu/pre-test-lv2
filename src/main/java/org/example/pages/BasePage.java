@@ -5,6 +5,7 @@ import org.openqa.selenium.support.PageFactory;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import java.time.Duration;
+import java.util.List;
 
 public class BasePage {
     protected WebDriver driver;
@@ -46,6 +47,35 @@ public class BasePage {
             return element.isDisplayed();
         } catch (TimeoutException | NoSuchElementException e) {
             return false;
+        }
+    }
+
+    protected void clickByJavaScript(WebElement element) {
+        waitForElementClickable(element);
+        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", element);
+    }
+
+    protected boolean waitForDataChange(List<String> initialData, List<String> newData, int timeoutInSeconds) {
+        try {
+            WebDriverWait customWait = new WebDriverWait(driver, Duration.ofSeconds(timeoutInSeconds));
+            return customWait.until(driver -> {
+                try {
+                    return !newData.equals(initialData);
+                } catch (StaleElementReferenceException e) {
+                    return false;
+                }
+            });
+        } catch (TimeoutException e) {
+            return false;
+        }
+    }
+
+    protected void waitForSeconds(int seconds) {
+        try {
+            Thread.sleep(seconds * 1000);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Wait was interrupted", e);
         }
     }
 } 
