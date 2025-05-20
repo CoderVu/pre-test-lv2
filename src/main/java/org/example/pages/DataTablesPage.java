@@ -15,7 +15,7 @@ import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.Locale;
 import java.util.logging.Logger;
-import java.util.Comparator;
+import java.util.Collections;
 
 public class DataTablesPage extends BasePage {
     private Logger logger = Logger.getLogger(DataTablesPage.class.getName());
@@ -94,11 +94,17 @@ public class DataTablesPage extends BasePage {
                     List<String> newData = getColumnData(index);
                     if (!newData.equals(initialData)) {
                         dataChanged = true;
+                        // Print the data for debugging
+                        logger.info("Column data after sorting: " + newData);
+                        
                         // Verify sorting
-                        if (isColumnSortedAscending(newData)) {
+                        boolean isAscending = isColumnSortedAscending(newData);
+                        boolean isDescending = isColumnSortedDescending(newData);
+                        
+                        if (isAscending) {
                             logger.info(TestConstants.COLUMN_NAMES[index] + " is sorted ascending: " + newData);
                             highlightColumn(index, "#90EE90"); // Light green for ascending sort
-                        } else if (isColumnSortedDescending(newData)) {
+                        } else if (isDescending) {
                             logger.info(TestConstants.COLUMN_NAMES[index] + " is sorted descending: " + newData);
                             highlightColumn(index, "#87CEEB"); // Sky blue for descending sort
                         } else {
@@ -163,106 +169,94 @@ public class DataTablesPage extends BasePage {
                firstRowCells.get(4).getText().trim().equals(website);
     }
 
-    private double parseCurrency(String value) {
-        try {
-            return NumberFormat.getCurrencyInstance(Locale.US).parse(value.trim()).doubleValue();
-        } catch (ParseException e) {
-            return 0.0;
-        }
-    }
-
     public boolean isColumnSortedAscending(List<String> columnData) {
         if (columnData.isEmpty()) return true;
         
         String firstElement = columnData.get(0);
-        Comparator<String> comparator;
+        List<String> sortedData = new ArrayList<>(columnData);
         
         if (firstElement.startsWith("$")) {
-            comparator = (a, b) -> {
+            sortedData.sort((a, b) -> {
                 double aValue = Double.parseDouble(a.replace("$", "").trim());
                 double bValue = Double.parseDouble(b.replace("$", "").trim());
                 return Double.compare(aValue, bValue);
-            };
+            });
         } else if (firstElement.startsWith("http")) {
-            comparator = (a, b) -> {
+            sortedData.sort((a, b) -> {
                 String aDomain = a.replace("http://www.", "").replace(".com", "");
                 String bDomain = b.replace("http://www.", "").replace(".com", "");
                 return aDomain.compareTo(bDomain);
-            };
+            });
         } else if (firstElement.contains("@")) {
-            comparator = (a, b) -> {
+            sortedData.sort((a, b) -> {
                 String aUsername = a.split("@")[0];
                 String bUsername = b.split("@")[0];
                 return aUsername.compareTo(bUsername);
-            };
+            });
         } else {
-            comparator = String::compareTo;
+            Collections.sort(sortedData);
         }
         
-        for (int i = 0; i < columnData.size() - 1; i++) {
-            if (comparator.compare(columnData.get(i), columnData.get(i + 1)) > 0) {
-                logger.warning("Sorting failed at index " + i + ": " + columnData.get(i) + " > " + columnData.get(i + 1));
-                return false;
-            }
-        }
-        return true;
+        return columnData.equals(sortedData);
     }
 
     public boolean isColumnSortedDescending(List<String> columnData) {
         if (columnData.isEmpty()) return true;
         
         String firstElement = columnData.get(0);
-        Comparator<String> comparator;
+        List<String> sortedData = new ArrayList<>(columnData);
         
         if (firstElement.startsWith("$")) {
-            comparator = (a, b) -> {
+            sortedData.sort((a, b) -> {
                 double aValue = Double.parseDouble(a.replace("$", "").trim());
                 double bValue = Double.parseDouble(b.replace("$", "").trim());
-                return Double.compare(bValue, aValue); // Reverse order
-            };
+                return Double.compare(bValue, aValue);
+            });
         } else if (firstElement.startsWith("http")) {
-            comparator = (a, b) -> {
+            sortedData.sort((a, b) -> {
                 String aDomain = a.replace("http://www.", "").replace(".com", "");
                 String bDomain = b.replace("http://www.", "").replace(".com", "");
-                return bDomain.compareTo(aDomain); // Reverse order
-            };
+                return bDomain.compareTo(aDomain);
+            });
         } else if (firstElement.contains("@")) {
-            comparator = (a, b) -> {
+            sortedData.sort((a, b) -> {
                 String aUsername = a.split("@")[0];
                 String bUsername = b.split("@")[0];
-                return bUsername.compareTo(aUsername); // Reverse order
-            };
+                return bUsername.compareTo(aUsername);
+            });
         } else {
-            comparator = (a, b) -> b.compareTo(a); // Reverse order
+            sortedData.sort(Collections.reverseOrder());
         }
         
-        for (int i = 0; i < columnData.size() - 1; i++) {
-            if (comparator.compare(columnData.get(i), columnData.get(i + 1)) > 0) {
-                logger.warning("Sorting failed at index " + i + ": " + columnData.get(i) + " < " + columnData.get(i + 1));
-                return false;
-            }
-        }
-        return true;
+        return columnData.equals(sortedData);
     }
 
     public int getColumnCount() {
         return tableHeaders.size();
     }
 
-    public void printColumnData(List<String> columnData) {
-        logger.warning("Column data:");
-        for (int i = 0; i < columnData.size(); i++) {
-            logger.warning(i + ": " + columnData.get(i));
+    public void testAllColumnsSorting() {
+        int columnCount = getColumnCount();
+        
+        for (int i = 0; i < columnCount - 1; i++) { // Exclude Action column
+            String columnName = TestConstants.COLUMN_NAMES[i];
+            logger.info("Testing " + columnName + " column sorting");
+
+            // Test ascending sort
+            clickTableHeader(i);
+            List<String> ascendingData = getColumnData(i);
+            if (!isColumnSortedAscending(ascendingData)) {
+                throw new RuntimeException(columnName + " is not sorted in ascending order");
+            }
+            logger.info(columnName + " ascending sort verified");
+
+            // Test descending sort
+            clickTableHeader(i);
+            List<String> descendingData = getColumnData(i);
+            if (!isColumnSortedDescending(descendingData)) {
+                throw new RuntimeException(columnName + " is not sorted in descending order");
+            }
+            logger.info(columnName + " descending sort verified");
         }
-    }
-
-    public boolean isHeaderSortedAscending(int columnIndex) {
-        WebElement header = tableHeaders.get(columnIndex);
-        return header.getAttribute("class").contains("headerSortUp");
-    }
-
-    public boolean isHeaderSortedDescending(int columnIndex) {
-        WebElement header = tableHeaders.get(columnIndex);
-        return header.getAttribute("class").contains("headerSortDown");
     }
 } 

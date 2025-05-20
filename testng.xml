@@ -4,7 +4,7 @@
     <listeners>
         <listener class-name="org.example.listeners.TestListener"/>
     </listeners>
-    <test name="Data Tables Tests">
+    <test name="Data Tables Tests" preserve-order="true">
         <classes>
             <class name="org.example.tests.TestCase"/>
         </classes>
