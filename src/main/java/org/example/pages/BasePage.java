@@ -41,7 +41,7 @@ public class BasePage {
         return element.getText();
     }
 
-    protected boolean isElementDisplayed(WebElement element) {
+    public boolean isElementDisplayed(WebElement element) {
         try {
             waitForElementVisible(element);
             return element.isDisplayed();

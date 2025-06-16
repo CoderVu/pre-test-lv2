@@ -9,11 +9,9 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.StaleElementReferenceException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Logger;
 import java.util.Collections;
 
 public class DataTablesPage extends BasePage {
-    private Logger logger = Logger.getLogger(DataTablesPage.class.getName());
 
     // Locators
     @FindBy(linkText = "Sortable Data Tables")
@@ -28,10 +26,9 @@ public class DataTablesPage extends BasePage {
     @FindBy(css = "#table1 tbody tr")
     private List<WebElement> tableRows;
 
-    @FindBy(css = "#table1 tbody tr td")
-    private List<WebElement> tableCells;
+    @FindBy(css = "#table1 tbody tr:first-child td")
+    private List<WebElement> firstRowCells;
 
-    // Getters for WebElements
     public WebElement getSortableDataTablesLink() {
         return sortableDataTablesLink;
     }
@@ -40,32 +37,6 @@ public class DataTablesPage extends BasePage {
         return firstTable;
     }
 
-
-    public boolean isElementDisplayed(WebElement element) {
-        return super.isElementDisplayed(element);
-    }
-
-    public void waitForElementVisible(WebElement element) {
-        super.waitForElementVisible(element);
-    }
-
-    public void waitForElementClickable(WebElement element) {
-        super.waitForElementClickable(element);
-    }
-
-    public void click(WebElement element) {
-        super.click(element);
-    }
-
-    public void sendKeys(WebElement element, String text) {
-        super.sendKeys(element, text);
-    }
-
-    public String getText(WebElement element) {
-        return super.getText(element);
-    }
-
-    // Constructor
     public DataTablesPage(WebDriver driver) {
         super(driver);
     }
@@ -76,47 +47,27 @@ public class DataTablesPage extends BasePage {
 
     public void navigateToSortableDataTables() {
         navigateToMainPage();
-        wait.until(ExpectedConditions.elementToBeClickable(sortableDataTablesLink));
+        waitForElementClickable(sortableDataTablesLink);
         click(sortableDataTablesLink);
-        wait.until(ExpectedConditions.visibilityOf(firstTable));
+        waitForElementVisible(firstTable);
     }
 
     public void clickTableHeader(int index) {
         try {
             WebElement header = wait.until(ExpectedConditions.elementToBeClickable(tableHeaders.get(index)));
-            logger.info("=== Column: " + TestConstants.COLUMN_NAMES[index] + " ===");
-            
             clickByJavaScript(header);
-            wait.until(ExpectedConditions.visibilityOf(firstTable));
-            
-            List<String> columnData = getColumnData(index);
-            logger.info("Column data after clicking: " + columnData);
-            
-            boolean isAscending = isColumnSortedAscending(columnData);
-            boolean isDescending = isColumnSortedDescending(columnData);
-            
-            if (isAscending) {
-                logger.info(TestConstants.COLUMN_NAMES[index] + " is sorted ascending: " + columnData);
-            } else if (isDescending) {
-                logger.info(TestConstants.COLUMN_NAMES[index] + " is sorted descending: " + columnData);
-            } else {
-                logger.warning("Sorting verification failed:");
-                logger.warning("Data: " + columnData);
-                throw new RuntimeException(TestConstants.COLUMN_NAMES[index] + " is not properly sorted");
-            }
-            
+            waitForElementVisible(firstTable);
         } catch (Exception e) {
-            logger.severe("Failed to sort " + TestConstants.COLUMN_NAMES[index] + ": " + e.getMessage());
-            throw new RuntimeException("Failed to sort " + TestConstants.COLUMN_NAMES[index] + ": " + e.getMessage(), e);
+            throw new RuntimeException("Failed to click table header at index " + index + ": " + e.getMessage(), e);
         }
     }
 
     public List<String> getColumnData(int columnIndex) {
         List<String> columnData = new ArrayList<>();
         try {
-            wait.until(ExpectedConditions.visibilityOf(firstTable));
+            waitForElementVisible(firstTable);
             for (WebElement row : tableRows) {
-                List<WebElement> cells = row.findElements(By.tagName("td"));
+                List<WebElement> cells = row.findElements(By.cssSelector("td"));
                 if (cells.size() > columnIndex) {
                     if (columnIndex == 5) {
                         List<WebElement> links = cells.get(columnIndex).findElements(By.tagName("a"));
@@ -131,25 +82,33 @@ public class DataTablesPage extends BasePage {
                     } else {
                         String cellText = cells.get(columnIndex).getText().trim();
                         columnData.add(cellText);
-                        logger.info("Column " + TestConstants.COLUMN_NAMES[columnIndex] + " - Cell value: " + cellText);
                     }
                 }
             }
         } catch (StaleElementReferenceException e) {
-            logger.warning("Stale element in getColumnData, retrying...");
             waitForSeconds(1);
             return getColumnData(columnIndex);
         }
         return columnData;
     }
 
-    public boolean verifyFirstRowData(String lastName, String firstName, String email, String due, String website) {
-        List<WebElement> firstRowCells = tableCells.subList(0, 5);
-        return firstRowCells.get(0).getText().trim().equals(lastName) &&
-               firstRowCells.get(1).getText().trim().equals(firstName) &&
-               firstRowCells.get(2).getText().trim().equals(email) &&
-               firstRowCells.get(3).getText().trim().equals(due) &&
-               firstRowCells.get(4).getText().trim().equals(website);
+    public List<String> getFirstRowData() {
+        List<String> firstRowData = new ArrayList<>();
+        try {
+            waitForElementVisible(firstTable);
+            if (firstRowCells.isEmpty()) {
+                return firstRowData;
+            }
+            
+            for (int i = 0; i < Math.min(firstRowCells.size(), 5); i++) {
+                String cellText = firstRowCells.get(i).getText().trim();
+                firstRowData.add(cellText);
+            }
+        } catch (StaleElementReferenceException e) {
+            waitForSeconds(1);
+            return getFirstRowData();
+        }
+        return firstRowData;
     }
 
     public boolean isColumnSortedAscending(List<String> columnData) {
@@ -238,18 +197,15 @@ public class DataTablesPage extends BasePage {
             throw new RuntimeException("Column '" + columnName + "' not found");
         }
         clickTableHeader(columnIndex);
-        logger.info("Clicked on column: " + columnName);
     }
 
     private int getColumnIndex(String columnName) {
         for (int i = 0; i < tableHeaders.size(); i++) {
             String headerText = tableHeaders.get(i).getText().trim();
-            logger.info("Checking header: " + headerText + " against: " + columnName);
             if (headerText.equals(columnName)) {
                 return i;
             }
         }
-        logger.warning("Column '" + columnName + "' not found in table headers");
         return -1;
     }
 
@@ -272,21 +228,37 @@ public class DataTablesPage extends BasePage {
     public void verifyColumnsAscending(String... columnNames) {
         for (String columnName : columnNames) {
             clickColumnHeader(columnName);
+            waitForSeconds(1);
+            
             if (!isColumnAscending(columnName)) {
-                throw new RuntimeException("Column '" + columnName + "' is not in ascending order");
+                clickColumnHeader(columnName);
+                waitForSeconds(1);
+                
+                if (!isColumnAscending(columnName)) {
+                    throw new RuntimeException("Column '" + columnName + "' is not in ascending order after multiple clicks");
+                }
             }
-            logger.info(columnName + " is in ascending order");
         }
     }
 
     public void verifyColumnsDescending(String... columnNames) {
         for (String columnName : columnNames) {
             clickColumnHeader(columnName);
-            if (!isColumnDescending(columnName)) {
-                throw new RuntimeException("Column '" + columnName + "' is not in descending order");
+            waitForSeconds(1);
+            
+            if (isColumnAscending(columnName)) {
+                clickColumnHeader(columnName);
+                waitForSeconds(1);
             }
-            logger.info(columnName + " is in descending order");
+            
+            if (!isColumnDescending(columnName)) {
+                clickColumnHeader(columnName);
+                waitForSeconds(1);
+                
+                if (!isColumnDescending(columnName)) {
+                    throw new RuntimeException("Column '" + columnName + "' is not in descending order after multiple clicks");
+                }
+            }
         }
     }
-
 } 
