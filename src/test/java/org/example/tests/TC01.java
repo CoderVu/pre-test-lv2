@@ -7,10 +7,10 @@ import org.example.testdata.TestData;
 import org.openqa.selenium.WebDriver;
 import org.testng.Assert;
 import org.testng.annotations.*;
-
 import java.util.List;
+import static org.example.constants.TestConstants.DATA_TABLE_COLUMNS;
 
-public class TestCase {
+public class TC01 {
     private DataTablesPage dataTablesPage;
     private User expectedUser;
     private WebDriver driver;
@@ -44,12 +44,8 @@ public class TestCase {
         Assert.assertEquals(actualFirstRowData, expectedFirstRowData, 
             "First row data is incorrect");
 
-        dataTablesPage.verifyColumnsAscending(
-            "Last Name", "First Name", "Email", "Due", "Web Site"
-        );
-        dataTablesPage.verifyColumnsDescending(
-            "Last Name", "First Name", "Email", "Due", "Web Site"
-        );
+        dataTablesPage.verifyColumnsAscending(DATA_TABLE_COLUMNS);
+        dataTablesPage.verifyColumnsDescending(DATA_TABLE_COLUMNS);
     }
 
     @AfterClass

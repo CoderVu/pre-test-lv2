@@ -6,7 +6,7 @@
     </listeners>
     <test name="Data Tables Tests" preserve-order="true">
         <classes>
-            <class name="org.example.tests.TestCase"/>
+            <class name="org.example.tests.TC01"/>
         </classes>
     </test>
 </suite> 
